@@ -5,7 +5,7 @@ from sklearn.preprocessing import StandardScaler
 
 def drop_null_columns(
     df: pd.DataFrame,
-    id_column: str
+    id_column: Literal["DBInstanceIdentifier", "DBClusterIdentifier"],
 ) -> pd.DataFrame:
     """
     Drop null columns and those with the same value in all records, except the identifier column.
@@ -125,7 +125,7 @@ def standardize_data(
     # Rebuild a DataFrame with standardized data
     scaled_data_df = pd.DataFrame(scaled_data, columns=numeric_data.columns)
     # Add the categorical column back to the DataFrame
-    scaled_data_df['DBInstanceIdentifier'] = categorical_column.reset_index(drop=True)
+    scaled_data_df[id_column] = categorical_column.reset_index(drop=True)
 
     return scaled_data_df
 
