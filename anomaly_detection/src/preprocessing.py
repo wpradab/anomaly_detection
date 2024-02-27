@@ -1,5 +1,9 @@
+import numpy as np
 import pandas as pd
 from typing import Literal
+from sklearn.decomposition import PCA
+from sklearn.decomposition import FastICA
+from factor_analyzer import FactorAnalyzer
 from sklearn.preprocessing import StandardScaler
 
 
@@ -8,11 +12,13 @@ def drop_null_columns(
     id_column: Literal["DBInstanceIdentifier", "DBClusterIdentifier"],
 ) -> pd.DataFrame:
     """
-    Drop null columns and those with the same value in all records, except the identifier column.
+    Drop null columns and those with the same value in all records,
+    except the identifier column.
 
     Args:
     - df (pd.DataFrame): Pandas DataFrame.
-    - id_column (str): Name of the identifier column that should not be dropped.
+    - id_column (str): Name of the identifier column that should not
+    be dropped.
 
     Returns:
     pd.DataFrame: Clean DataFrame.
@@ -34,13 +40,15 @@ def drop_null_columns(
 def drop_redundant_cols(
     df: pd.DataFrame,
     threshold: float = 0.95
-):
+) -> pd.DataFrame:
     """
-    Drop redundant columns from a DataFrame based on a correlation threshold.
+    Drop redundant columns from a DataFrame based on a correlation
+    threshold.
 
     Args:
     - df_instances (pd.DataFrame): DataFrame with the data.
-    - threshold (float): Correlation threshold. Columns with a correlation greater than this value are considered redundant.
+    - threshold (float): Correlation threshold. Columns with a
+    correlation greater than this value are considered redundant.
 
     Returns:
     - pd.DataFrame: DataFrame without redundant columns.
@@ -67,9 +75,10 @@ def drop_redundant_cols(
 def filter_nan_cols(
     df: pd.DataFrame,
     threshold: float = 0.5
-):
+) -> pd.DataFrame:
     """
-    Filter columns that have a number of NaN values exceeding the given threshold.
+    Filter columns that have a number of NaN values exceeding
+    the given threshold.
 
     Args:
     - data (pd.DataFrame): Pandas DataFrame with the data.
@@ -98,16 +107,19 @@ def filter_nan_cols(
 
 
 def standardize_data(
-        df,
-        id_column: Literal["DBInstanceIdentifier", "DBClusterIdentifier"],
-        threshold=0.5
-):
+    df: pd.DataFrame,
+    id_column: Literal["DBInstanceIdentifier", "DBClusterIdentifier"],
+    threshold=0.5
+) -> pd.DataFrame:
     """
-    Standardize numeric data of a DataFrame and preserve a specified categorical column.
+    Standardize numeric data of a DataFrame and preserve a specified
+     categorical column.
 
     Args:
     - data (pd.DataFrame): Pandas DataFrame with the data.
-    - id_column (Literal["DBInstanceIdentifier", "DBClusterIdentifier"]): Name of the categorical column to preserve.
+    - id_column (Literal["DBInstanceIdentifier",
+    "DBClusterIdentifier"]): Name of the categorical column to
+    preserve.
     - threshold (float): Allowed NaN threshold as a fraction.
 
     Returns:
@@ -129,4 +141,94 @@ def standardize_data(
 
     return scaled_data_df
 
+
+def dataframe_pca_transform(
+        df: pd.DataFrame,
+        new_dimension: int
+) -> np.ndarray:
+    """
+    Transforms data from a DataFrame using PCA (Principal
+    Component Analysis).
+
+    Parameters:
+    -----------
+    df : pd.DataFrame
+        A pandas DataFrame containing the original data.
+    new_dimension : int
+        The number of dimensions to reduce the data via PCA.
+
+    Returns:
+    --------
+    Union[pd.DataFrame, np.ndarray]
+        Depends on the choice of return:
+        - If a DataFrame is returned, it contains the principal components
+         computed via PCA.
+        - If an ndarray is returned, it is the data transformed via PCA.
+    """
+    num_data = df.select_dtypes(include=['float64', 'int64'])
+    # Perform PCA
+    pca = PCA(n_components=new_dimension)
+    principal_components = pca.fit_transform(num_data)
+
+    return principal_components
+
+
+def ica_dimensionality_reduction_plot(
+        df: pd.DataFrame,
+        new_dimension: int
+) -> np.ndarray:
+
+    """
+    Realiza la reducción de dimensionalidad utilizando Análisis de
+    Componentes Independientes (ICA) y grafica el resultado en un
+    gráfico de dispersión para dos dimensiones.
+
+    Parámetros:
+    X (array-like): Matriz de características de entrada.
+    n_components (int): Número de componentes independientes a extraer.
+
+    Devuelve:
+    reduced_features (array-like): Matriz de características reducida.
+    """
+    df = df.select_dtypes(include=['float64', 'int64'])
+    df = df.values
+    ica = FastICA(n_components=new_dimension, random_state=42)
+    reduced_features = ica.fit_transform(df)
+
+    return reduced_features
+
+
+def factor_analysis_and_plot(
+        df: pd.DataFrame,
+        new_dimension: int
+) -> np.ndarray:
+    """
+    Performs Factor Analysis and plots the factor loadings.
+
+    Parameters:
+    -----------
+    df (array-like or DataFrame): Input feature matrix.
+    new_dimension (int): Number of factors to extract.
+
+    Returns:
+    --------
+    factors (DataFrame): Matrix of factor scores.
+    """
+
+    df = df.select_dtypes(include=['float64', 'int64'])
+
+    if isinstance(df, pd.DataFrame):
+        df = df.values
+
+    # Realizar Análisis de Factores# Perform Factor Analysis
+    fa = FactorAnalyzer(n_factors=new_dimension, rotation=None)
+    fa.fit(df)
+
+    # # Obtener las cargas factoriales
+    # loadings = pd.DataFrame(fa.loadings_, columns=['Componente 1', 'Componente 2'])
+
+    # Get latent factors
+    factors = fa.transform(df)
+
+    return factors
 
