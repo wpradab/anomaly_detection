@@ -1,3 +1,4 @@
+import pickle
 import numpy as np
 import pandas as pd
 from typing import Literal
@@ -109,18 +110,20 @@ def filter_nan_cols(
 def standardize_data(
     df: pd.DataFrame,
     id_column: Literal["DBInstanceIdentifier", "DBClusterIdentifier"],
-    threshold=0.5
+    threshold: float = 0.5,
+    save_path: str = None
 ) -> pd.DataFrame:
     """
     Standardize numeric data of a DataFrame and preserve a specified
-     categorical column.
+    categorical column.
 
     Args:
-    - data (pd.DataFrame): Pandas DataFrame with the data.
+    - df (pd.DataFrame): Pandas DataFrame with the data.
     - id_column (Literal["DBInstanceIdentifier",
     "DBClusterIdentifier"]): Name of the categorical column to
     preserve.
     - threshold (float): Allowed NaN threshold as a fraction.
+    - save_path (str): Path to save the scaler model.
 
     Returns:
     pd.DataFrame: DataFrame with standardized data.
@@ -139,12 +142,18 @@ def standardize_data(
     # Add the categorical column back to the DataFrame
     scaled_data_df[id_column] = categorical_column.reset_index(drop=True)
 
+    # Save the scaler model if a path is provided
+    if save_path:
+        with open(save_path, 'wb') as f:
+            pickle.dump(scaler, f)
+
     return scaled_data_df
 
 
 def dataframe_pca_transform(
         df: pd.DataFrame,
-        new_dimension: int
+        new_dimension: int,
+        save_path: str = None
 ) -> np.ndarray:
     """
     Transforms data from a DataFrame using PCA (Principal
@@ -156,13 +165,14 @@ def dataframe_pca_transform(
         A pandas DataFrame containing the original data.
     new_dimension : int
         The number of dimensions to reduce the data via PCA.
+    save_path (str): Path to save the PCA model.
 
     Returns:
     --------
     Union[pd.DataFrame, np.ndarray]
         Depends on the choice of return:
         - If a DataFrame is returned, it contains the principal components
-         computed via PCA.
+        computed via PCA.
         - If an ndarray is returned, it is the data transformed via PCA.
     """
     num_data = df.select_dtypes(include=['float64', 'int64'])
@@ -170,12 +180,18 @@ def dataframe_pca_transform(
     pca = PCA(n_components=new_dimension)
     principal_components = pca.fit_transform(num_data)
 
+    # Save the PCA model if a path is provided
+    if save_path:
+        with open(save_path, 'wb') as f:
+            pickle.dump(pca, f)
+
     return principal_components
 
 
-def ica_dimensionality_reduction_plot(
+def dataframe_ica_transform(
         df: pd.DataFrame,
-        new_dimension: int
+        new_dimension: int,
+        save_path: str = None
 ) -> np.ndarray:
 
     """
@@ -186,6 +202,7 @@ def ica_dimensionality_reduction_plot(
     Parámetros:
     X (array-like): Matriz de características de entrada.
     n_components (int): Número de componentes independientes a extraer.
+    save_path (str): Path to save the ICA model.
 
     Devuelve:
     reduced_features (array-like): Matriz de características reducida.
@@ -195,12 +212,18 @@ def ica_dimensionality_reduction_plot(
     ica = FastICA(n_components=new_dimension, random_state=42)
     reduced_features = ica.fit_transform(df)
 
+    # Save the ICA model if a path is provided
+    if save_path:
+        with open(save_path, 'wb') as f:
+            pickle.dump(ica, f)
+
     return reduced_features
 
 
-def factor_analysis_and_plot(
-        df: pd.DataFrame,
-        new_dimension: int
+def dataframe_factor_analysis_transform(
+    df: pd.DataFrame,
+    new_dimension: int,
+    save_path: str = None
 ) -> np.ndarray:
     """
     Performs Factor Analysis and plots the factor loadings.
@@ -209,6 +232,7 @@ def factor_analysis_and_plot(
     -----------
     df (array-like or DataFrame): Input feature matrix.
     new_dimension (int): Number of factors to extract.
+    save_path (str): Path to save the Factor Analysis model.
 
     Returns:
     --------
@@ -224,11 +248,12 @@ def factor_analysis_and_plot(
     fa = FactorAnalyzer(n_factors=new_dimension, rotation=None)
     fa.fit(df)
 
-    # # Obtener las cargas factoriales
-    # loadings = pd.DataFrame(fa.loadings_, columns=['Componente 1', 'Componente 2'])
+    # Save the Factor Analysis model if a path is provided
+    if save_path:
+        with open(save_path, 'wb') as f:
+            pickle.dump(fa, f)
 
     # Get latent factors
     factors = fa.transform(df)
 
     return factors
-
